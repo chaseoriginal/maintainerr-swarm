@@ -6,12 +6,16 @@ deployment and polls this repository for changes.
 | | |
 |---|---|
 | Portainer host | ore-dock-110-1 |
+| Portainer stack id | 36 |
 | Endpoint | 5 (dock-110-7 swarm) |
 | Swarm | True |
 | Live service | svc:maintainerr-swarm_maintainerr |
 | Git repo | https://github.com/chaseoriginal/maintainerr-swarm |
 | Compose file | `docker-compose.yml` |
-| Auto-update poll | every 15m |
+| Auto-update poll | every 15m (gitops source id 14, workflow id 15) |
+| Proxy vhost | local NPM id 97 on ore-dock-110-1 |
+| TLS cert | NPM cert id 180 (Let's Encrypt, DNS-01 via Route53) |
+| AD DNS | CNAME `maintain` -> `lproxy.echoinggreen.net` |
 
 ## What it is
 
@@ -71,3 +75,27 @@ login, and `GET /api/settings/database/download` returns the entire config
 database (Plex tokens, *arr API keys, Seerr keys) to any client that can
 reach it. The name resolves only via AD DNS, and the proxy vhost carries the
 "Private Site Access" access list, so it answers only from permitted ranges.
+
+The vhost's `advanced_config` carries **server-level** directives only
+(`proxy_buffering off` and long timeouts, for the SSE log/progress streams).
+Do not add a `location /` block there: NPM renders the access-list rules
+only inside its own default `location` block, and a custom `location /`
+suppresses that block - the vhost then serves with **no** `allow`/`deny` at
+all and the access list silently stops applying.
+
+## First-run configuration
+
+All service connections are entered in the Maintainerr UI, not in the
+compose file. The endpoints in use on this fleet:
+
+| Service | Address |
+|---|---|
+| Plex | Triple E Windows Plex, via `*.plex.direct` (as Seerr has it) |
+| Radarr | Extended `10.77.110.60:7878`, 4K `10.77.110.80:7879` |
+| Sonarr | Extended `10.77.110.60:8989`, 4K `10.77.110.80:8990` |
+| Seerr | `10.77.110.70:5055` |
+| Tautulli | `10.77.110.60:82` |
+
+Start with the media server and one Radarr/Sonarr pair, confirm the Plex
+connection succeeds, then add the rest. Maintainerr supports one media
+server at a time.
